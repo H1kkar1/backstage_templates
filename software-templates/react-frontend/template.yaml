@@ -1,0 +1,90 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: default-system
+  title: Create a new Default System Service
+  description: Creates a new service with CI/CD and K8s manifests
+spec:
+  owner: platform-team
+  type: service
+
+  parameters:
+    - title: Service Details
+      required:
+        - componentId
+        - owner
+      properties:
+        componentId:
+          title: Component Name
+          type: string
+          description: Unique name of your service (e.g., payment-api)
+          pattern: '^[a-z0-9-]+$'
+        owner:
+          title: Owner
+          type: string
+          description: Team name from Backstage (e.g., team-a)
+        description:
+          title: Description
+          type: string
+        port:
+          title: Application Port
+          type: number
+          default: 8080
+        namespace:
+          title: "K8s Namespace"
+          type: string
+          description: "Kubernetes namespace for deployment"
+          default: "stage"
+    - title: Infrastructure & Resources
+      properties:
+        cpuLimit:
+          type: string
+          default: '500m'
+        memoryLimit:
+          type: string
+          default: '512Mi'
+        serviceType:
+          title: Service Type
+          type: string
+          enum: ['backend', 'frontend']
+          default: 'backend'
+
+  steps:
+    - id: fetch-skeleton
+      name: Fetch Skeleton + Apply Variables
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          componentId: ${{ parameters.componentId }}
+          port: ${{ parameters.port }}
+          cpuLimit: ${{ parameters.cpuLimit }}
+          memoryLimit: ${{ parameters.memoryLimit }}
+          serviceType: ${{ parameters.serviceType }}
+          dockerImage: your-registry/${{ parameters.componentId }}:latest 
+
+    - id: publish-github
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: ${{ parameters.description }}
+        repoUrl: github.com?owner=your-org&repo=${{ parameters.componentId }}
+        defaultBranch: main
+        sourcePath: ./source
+        repoVisibility: public
+
+    - id: register-catalog
+      name: Register Component in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish-github'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Go to Repository
+        url: ${{ steps['publish-github'].output.remoteUrl }}
+      - title: Open in Catalog
+        icon: catalog
+        entityRef: ${{ steps['register-catalog'].output.entityRef }}
