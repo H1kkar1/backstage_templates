@@ -2,141 +2,102 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: python-service
-  title: Python Service with Optional Ingress
-  description: Deploy Python service with optional ingress and shared namespace support
+  title: Python Service
+  description: Deploys Python service with GitOps
 spec:
   owner: platform-team
   type: service
 
   parameters:
-    - title: "Service Details"
+    - title: Service Configuration
       required:
         - componentId
         - owner
+        - namespace
       properties:
         componentId:
           title: Service Name
           type: string
           pattern: '^[a-z][a-z0-9-]*$'
-        
         owner:
           title: Owner Team
           type: string
-        
+        namespace:
+          title: Kubernetes Namespace
+          type: string
+          default: "default"
         description:
           title: Description
           type: string
+        port:
+          title: Application Port
+          type: number
+          default: 8000
 
-    - title: "Namespace Configuration"
+    - title: Git Configuration
       properties:
-        namespaceStrategy:
-          title: Namespace Strategy
+        codeRepoUrl:
+          title: Code Repository URL
           type: string
-          enum:
-            - create-new     
-            - use-existing   
-          default: create-new
-          ui:widget: radio
-        
-        namespace:
-          title: Namespace Name
+          default: "github.com?owner=your-org&repo="
+        gitopsRepoUrl:
+          title: GitOps Repository URL
           type: string
-          description: "Kubernetes namespace for deployment"
-          default: "default"
-          help: "If 'create-new' selected, this namespace will be created. If 'use-existing', it must already exist."
-        
-        createNamespaceResources:
-          title: Create ResourceQuota & LimitRange?
-          type: boolean
-          default: false
-          description: "Add resource quotas and limits to the namespace"
-          ui:widget: checkbox
+          default: "https://github.com/your-org/Diplom"
 
-    - title: "Ingress Configuration"
+    - title: Ingress Configuration
       properties:
         exposeService:
           title: Expose via Ingress?
           type: boolean
           default: false
-          description: "Create Ingress to expose service externally"
-        
         hostname:
           title: Domain Name
           type: string
-          description: "e.g., api.your-domain.com"
-          help: "Required if exposeService is true"
-          ui:show: 
-            condition: exposeService == true
-        
-        tlsEnabled:
-          title: Enable TLS
-          type: boolean
-          default: true
-          ui:show:
-            condition: exposeService == true
-        
-        ingressClass:
-          title: Ingress Class
-          type: string
-          default: "nginx"
-          enum: ["nginx", "traefik", "kong"]
           ui:show:
             condition: exposeService == true
 
   steps:
-    - id: clone-gitops
-      name: Clone GitOps Repository
-      action: fetch:git
-      input:
-        url: ${{ parameters.gitopsRepoUrl }}
-        branch: main
-        targetPath: ./gitops-temp
-    - id: setup-namespace
-      name: Setup Namespace
-      action: fetch:template
-      input:
-        url: ./skeleton-flux
-        targetPath: ./gitops-temp/infrastructure/namespaces/${{ parameters.namespace }}
-        values:
-          name: ${{ parameters.namespace }}
-          createResources: ${{ parameters.createNamespaceResources }}
-  
-          skipCreation: ${{ parameters.namespaceStrategy == 'use-existing' }}
-    - id: generate-manifests
-      name: Generate Application Manifests
-      action: fetch:template
-      input:
-        url: ./skeleton-flux
-        targetPath: ./gitops-temp/apps/${{ parameters.componentId }}
-        values:
-          componentId: ${{ parameters.componentId }}
-          namespace: ${{ parameters.namespace }}
-          port: 8000
-          exposeService: ${{ parameters.exposeService }}
-          hostname: ${{ parameters.hostname }}
-          tlsEnabled: ${{ parameters.tlsEnabled }}
-          ingressClass: ${{ parameters.ingressClass }}
-
+    # ШАГ 1: Создаем репозиторий с кодом пользователя
     - id: create-code-repo
       name: Create Service Code Repository
       action: publish:github
       input:
-        repoUrl: github.com?owner=${{ parameters.owner }}&repo=${{ parameters.componentId }}
+        repoUrl: ${{ parameters.codeRepoUrl }}${{ parameters.componentId }}
         defaultBranch: main
         repoVisibility: private
-        sourcePath: ./skeleton-code
         description: ${{ parameters.description }}
-    - id: commit-gitops
-      name: Commit GitOps Changes
+        sourcePath: ./skeleton-code
+
+    # ШАГ 2: Генерируем Flux манифесты
+    - id: generate-manifests
+      name: Generate Kubernetes Manifests
+      action: fetch:template
+      input:
+        url: ./skeleton-flux
+        targetPath: ./generated/apps/${{ parameters.owner }}/${{ parameters.componentId }}
+        values:
+          componentId: ${{ parameters.componentId }}
+          namespace: ${{ parameters.namespace }}
+          port: ${{ parameters.port }}
+          owner: ${{ parameters.owner }}
+          exposeService: ${{ parameters.exposeService }}
+          hostname: ${{ parameters.hostname }}
+
+    # ШАГ 3: Пушим манифесты в GitOps репозиторий
+    - id: push-to-gitops
+      name: Push to GitOps Repository
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
         branch: main
-        commitMessage: "Add ${{ parameters.componentId }} to namespace ${{ parameters.namespace }}"
-        path: ./gitops-temp
+        commitMessage: "Add ${{ parameters.componentId }} service for ${{ parameters.owner }} team"
+        sourcePath: ./generated
+        skipClone: true
 
-    - id: register
-      name: Register in Catalog
+    # ШАГ 4: Регистрируем компонент в Backstage
+    - id: register-component
+      name: Register Component in Catalog
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['create-code-repo'].output.repoContentsUrl }}
@@ -144,10 +105,7 @@ spec:
 
   output:
     links:
-      - title: Service Repository
+      - title: Code Repository
         url: ${{ steps['create-code-repo'].output.remoteUrl }}
       - title: GitOps Manifests
-        url: ${{ parameters.gitopsRepoUrl }}/tree/main/apps/${{ parameters.componentId }}
-      - if: ${{ parameters.exposeService }}
-        title: Service URL
-        url: https://${{ parameters.hostname }}
+        url: ${{ parameters.gitopsRepoUrl }}/tree/main/apps/${{ parameters.owner }}/${{ parameters.componentId }}

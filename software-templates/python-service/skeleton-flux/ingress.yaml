@@ -1,100 +1,28 @@
 {% if parameters.exposeService %}
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: ${{ parameters.componentId }}
   namespace: ${{ parameters.namespace }}
-  labels:
-    app: ${{ parameters.componentId }}
-    managed-by: flux
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
-  entryPoints:
-    - web
-    {% if parameters.tlsEnabled %}- websecure{% endif %}
-  
-  routes:
-    - kind: Rule
-      match: Host(`${{ parameters.hostname }}`) {% if parameters.pathPrefix %}&& PathPrefix(`${{ parameters.pathPrefix }}`){% endif %}
-      priority: 10
-      
-      middlewares:
-        - name: rate-limit-${{ parameters.componentId }}
-          namespace: ${{ parameters.namespace }}
-        - name: security-headers
-          namespace: traefik-system
-        {% if parameters.ipWhitelist %}
-        - name: ip-whitelist-${{ parameters.componentId }}
-          namespace: ${{ parameters.namespace }}
-        {% endif %}
-        {% if parameters.authEnabled %}
-        - name: auth-${{ parameters.componentId }}
-          namespace: ${{ parameters.namespace }}
-        {% endif %}
-      
-      services:
-        - name: ${{ parameters.componentId }}
-          namespace: ${{ parameters.namespace }}
-          port: {% if parameters.servicePort %}${{ parameters.servicePort }}{% else %}80{% endif %}
-          strategy: RoundRobin
-          weight: 10
-          
-          healthCheck:
-            path: /health
-            interval: 30s
-            timeout: 3s
-  
+  rules:
+  - host: ${{ parameters.hostname }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ${{ parameters.componentId }}
+            port:
+              number: 8080
   {% if parameters.tlsEnabled %}
   tls:
+  - hosts:
+    - ${{ parameters.hostname }}
     secretName: ${{ parameters.componentId }}-tls
-    options:
-      name: tls-options
-      namespace: traefik-system
   {% endif %}
----
-# Rate limiting middleware
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: rate-limit-${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
-spec:
-  rateLimit:
-    average: {% if parameters.rateLimitAverage %}${{ parameters.rateLimitAverage }}{% else %}100{% endif %}
-    burst: {% if parameters.rateLimitBurst %}${{ parameters.rateLimitBurst }}{% else %}200{% endif %}
-    period: 1s
-    sourceCriterion:
-      ipStrategy:
-        depth: 1
-{% if parameters.ipWhitelist %}
----
-# IP Whitelist middleware
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: ip-whitelist-${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
-spec:
-  ipWhiteList:
-    sourceRange:
-      {% for ip in parameters.ipWhitelist %}
-      - {{ ip }}
-      {% endfor %}
-{% endif %}
-{% if parameters.authEnabled %}
----
-# Authentication middleware
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: auth-${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
-spec:
-  forwardAuth:
-    address: http://auth-service.${{ parameters.namespace }}.svc.cluster.local:8080/auth
-    trustForwardHeader: true
-    authResponseHeaders:
-      - X-User
-      - X-Role
-{% endif %}
 {% endif %}

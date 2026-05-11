@@ -1,12 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ${{ parameters.componentId }}-service
+  name: ${{ parameters.componentId }}
+  namespace: ${{ parameters.namespace }}
+  labels:
+    app: ${{ parameters.componentId }}
 spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: ${{ parameters.port }}
+    protocol: TCP
   selector:
     app: ${{ parameters.componentId }}
-  ports:
-    - protocol: TCP
-      port: ${{ parameters.port }}
-      targetPort: ${{ parameters.port }}
-  type: ClusterIP

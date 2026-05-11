@@ -5,7 +5,7 @@ metadata:
   namespace: ${{ parameters.namespace }}
   labels:
     app: ${{ parameters.componentId }}
-    backstage.io/name: ${{ parameters.componentId }}
+    team: ${{ parameters.owner }}
 spec:
   replicas: 1
   selector:
@@ -15,6 +15,7 @@ spec:
     metadata:
       labels:
         app: ${{ parameters.componentId }}
+        team: ${{ parameters.owner }}
     spec:
       containers:
       - name: app
@@ -24,8 +25,6 @@ spec:
         env:
         - name: NAMESPACE
           value: ${{ parameters.namespace }}
-        - name: SERVICE_NAME
-          value: ${{ parameters.componentId }}
         resources:
           requests:
             memory: "128Mi"
