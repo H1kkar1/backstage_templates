@@ -1,11 +1,17 @@
-# backstage-templates/location.yaml
 apiVersion: backstage.io/v1alpha1
 kind: Location
 metadata:
-  name: backstage-templates
-  description: Collection of software templates
+  name: diploma-templates
+  description: Collection of software templates for Diploma project
 spec:
   targets:
-    - ./software-templates/**/template.yaml
-    - ./infrastructure-templates/**/template.yaml
-    - ./default/**/template.yaml
+    # Шаблоны приложений
+    - ./software-templates/default-system/template.yaml
+    - ./software-templates/python-service/template.yaml
+    - ./software-templates/react-frontend/template.yaml
+    
+    # Инфраструктурные шаблоны
+    - ./infrastructure-templates/postgres/template.yaml
+    - ./infrastructure-templates/redis/template.yaml
+    - ./infrastructure-templates/rabbitmq/template.yaml
+    - ./infrastructure-templates/monitoring/template.yaml
