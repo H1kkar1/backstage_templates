@@ -7,5 +7,5 @@ metadata:
 spec:
   targets:
     - ./software-templates/**/template.yaml
-    - ./infrastructure/**/template.yaml
+    - ./infrastructure-templates/**/template.yaml
     - ./default/**/template.yaml
