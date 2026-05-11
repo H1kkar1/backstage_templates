@@ -60,13 +60,16 @@ spec:
       name: Generate Kubernetes Manifests
       action: fetch:template
       input:
-        url: ./skeleton-flux
+        url: .  # ← Указываем корень репозитория шаблона
         targetPath: ./generated/apps/${{ parameters.owner }}/${{ parameters.componentId }}
         values:
           componentId: ${{ parameters.componentId }}
           namespace: ${{ parameters.namespace }}
           port: ${{ parameters.port }}
           owner: ${{ parameters.owner }}
+          exposeService: ${{ parameters.exposeService }}
+          hostname: ${{ parameters.hostname }}
+        templateFileBaseUrl: ./skeleton-flux  # ← Явно указываем папку с шаблонами
 
     - id: push-to-gitops
       name: Push to GitOps Repository

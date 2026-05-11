@@ -43,7 +43,7 @@ spec:
         gitopsRepoUrl:
           title: GitOps Repository URL
           type: string
-          default: "https://github.com/your-org/Diplom"
+          default: "https://github.com/H1KKAR1/Diplom"
 
     - title: Ingress Configuration
       properties:
