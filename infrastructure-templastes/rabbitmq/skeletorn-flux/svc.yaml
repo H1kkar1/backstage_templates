@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${{ parameters.componentId }}
+  namespace: ${{ parameters.namespace }}
+  labels:
+    app: ${{ parameters.componentId }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5672
+    targetPort: 5672
+    protocol: TCP
+    name: amqp
+  - port: 15672
+    targetPort: 15672
+    protocol: TCP
+    name: management
+  selector:
+    app: ${{ parameters.componentId }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${{ parameters.componentId }}-headless
+  namespace: ${{ parameters.namespace }}
+spec:
+  clusterIP: None
+  ports:
+  - port: 5672
+  selector:
+    app: ${{ parameters.componentId }}
