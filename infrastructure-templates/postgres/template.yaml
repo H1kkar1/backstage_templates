@@ -78,7 +78,7 @@ spec:
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
         branch: main
-        commitMessage: "Add PostgreSQL database ${{ parameters.componentId }}
+        commitMessage: "Add PostgreSQL database ${{ parameters.componentId }}"
         
         Database: ${{ parameters.databaseName }}
         User: ${{ parameters.databaseUser }}
