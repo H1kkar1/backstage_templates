@@ -10,8 +10,8 @@ spec:
     - ./software-templates/python-service/template.yaml
     - ./software-templates/react-frontend/template.yaml
     
-    # Инфраструктурные шаблоны
+    # Инфраструктурные шаблоны (теперь всё в infrastructure-templates)
     - ./infrastructure-templates/postgres/template.yaml
     - ./infrastructure-templates/redis/template.yaml
     - ./infrastructure-templates/rabbitmq/template.yaml
-    - ./infrastructure-templastes/monitoring\(KPS\)/template.yaml
+    - ./infrastructure-templates/monitoring/template.yaml
