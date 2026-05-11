@@ -1,0 +1,11 @@
+# backstage-templates/location.yaml
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: backstage-templates
+  description: Collection of software templates
+spec:
+  targets:
+    - ./software-templates/**/template.yaml
+    - ./infrastructure/**/template.yaml
+    - ./default/**/template.yaml
