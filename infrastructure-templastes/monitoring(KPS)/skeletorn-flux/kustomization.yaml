@@ -5,13 +5,8 @@ metadata:
   namespace: flux-system
 spec:
   interval: 5m
-  path: ./infrastructure/redis/${{ parameters.componentId }}
+  path: ./infrastructure/monitoring
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
-  healthChecks:
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: ${{ parameters.componentId }}
-      namespace: ${{ parameters.namespace }}

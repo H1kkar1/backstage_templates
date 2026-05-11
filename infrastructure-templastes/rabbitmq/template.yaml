@@ -18,49 +18,41 @@ spec:
           title: Service Name
           type: string
           default: "rabbitmq"
-        
         namespace:
           title: Namespace
           type: string
           default: "message-queue"
-        
         rabbitmqVersion:
           title: RabbitMQ Version
           type: string
           default: "3.12-management-alpine"
-        
         defaultUser:
           title: Default Username
           type: string
           default: "admin"
-        
         storageSize:
           title: Storage Size
           type: string
           default: "10Gi"
-        
         memoryLimit:
           title: Memory Limit
           type: string
           default: "1Gi"
-        
         cpuLimit:
           title: CPU Limit
           type: string
           default: "500m"
+        gitopsRepoUrl:
+          title: GitOps Repository URL
+          type: string
 
   steps:
-    - id: clone-gitops
-      action: fetch:git
-      input:
-        url: ${{ parameters.gitopsRepoUrl }}
-        targetPath: ./gitops
-
-    - id: generate-rabbitmq
+    - id: generate-manifests
+      name: Generate RabbitMQ Manifests
       action: fetch:template
       input:
         url: ./skeleton-flux
-        targetPath: ./gitops/infrastructure/rabbitmq/${{ parameters.componentId }}
+        targetPath: ./generated/infrastructure/rabbitmq/${{ parameters.componentId }}
         values:
           componentId: ${{ parameters.componentId }}
           namespace: ${{ parameters.namespace }}
@@ -70,9 +62,17 @@ spec:
           memoryLimit: ${{ parameters.memoryLimit }}
           cpuLimit: ${{ parameters.cpuLimit }}
 
-    - id: commit
+    - id: push-to-gitops
+      name: Push to GitOps Repository
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
+        branch: main
         commitMessage: "Add RabbitMQ ${{ parameters.componentId }}"
-        path: ./gitops
+        sourcePath: ./generated
+        skipClone: true
+
+  output:
+    links:
+      - title: RabbitMQ Manifests
+        url: ${{ parameters.gitopsRepoUrl }}/tree/main/infrastructure/rabbitmq/${{ parameters.componentId }}

@@ -5,13 +5,11 @@ metadata:
   namespace: ${{ parameters.namespace }}
 data:
   enabled_plugins: |
-    [rabbitmq_management, rabbitmq_peer_discovery_k8s].
+    [rabbitmq_management].
   rabbitmq.conf: |
     ## Clustering
-    cluster_formation.peer_discovery_backend = rabbit_peer_discovery_k8s
-    cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
-    cluster_formation.k8s.address_type = hostname
-    cluster_formation.k8s.service_name = ${{ parameters.componentId }}-headless
+    cluster_formation.peer_discovery_backend = rabbit_peer_discovery_classic_config
+    cluster_formation.classic_config.nodes.1 = rabbit@localhost
     
     ## Memory & Disk
     vm_memory_high_watermark.absolute = ${{ parameters.memoryLimit | replace('Gi','') }}GB

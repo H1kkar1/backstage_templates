@@ -19,50 +19,42 @@ spec:
           type: string
           pattern: '^[a-z][a-z0-9-]*$'
           default: "redis"
-        
         namespace:
           title: Namespace
           type: string
           default: "databases"
-        
         redisVersion:
           title: Redis Version
           type: string
           enum: ['7-alpine', '6-alpine']
           default: '7-alpine'
-        
         maxmemory:
           title: Max Memory
           type: string
           default: "256mb"
-        
         storageSize:
           title: Storage Size
           type: string
           default: "5Gi"
-        
         memoryLimit:
           title: Memory Limit
           type: string
           default: "512Mi"
-        
         cpuLimit:
           title: CPU Limit
           type: string
           default: "200m"
+        gitopsRepoUrl:
+          title: GitOps Repository URL
+          type: string
 
   steps:
-    - id: clone-gitops
-      action: fetch:git
-      input:
-        url: ${{ parameters.gitopsRepoUrl }}
-        targetPath: ./gitops
-
-    - id: generate-redis
+    - id: generate-manifests
+      name: Generate Redis Manifests
       action: fetch:template
       input:
         url: ./skeleton-flux
-        targetPath: ./gitops/infrastructure/redis/${{ parameters.componentId }}
+        targetPath: ./generated/infrastructure/redis/${{ parameters.componentId }}
         values:
           componentId: ${{ parameters.componentId }}
           namespace: ${{ parameters.namespace }}
@@ -72,9 +64,17 @@ spec:
           memoryLimit: ${{ parameters.memoryLimit }}
           cpuLimit: ${{ parameters.cpuLimit }}
 
-    - id: commit
+    - id: push-to-gitops
+      name: Push to GitOps Repository
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
+        branch: main
         commitMessage: "Add Redis ${{ parameters.componentId }}"
-        path: ./gitops
+        sourcePath: ./generated
+        skipClone: true
+
+  output:
+    links:
+      - title: Redis Manifests
+        url: ${{ parameters.gitopsRepoUrl }}/tree/main/infrastructure/redis/${{ parameters.componentId }}

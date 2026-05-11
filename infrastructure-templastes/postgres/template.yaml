@@ -21,59 +21,47 @@ spec:
           type: string
           pattern: '^[a-z][a-z0-9-]*$'
           default: "postgres"
-        
         namespace:
           title: Namespace
           type: string
           default: "databases"
-        
         databaseName:
           title: Database Name
           type: string
           default: "appdb"
-        
         databaseUser:
           title: Database User
           type: string
           default: "appuser"
-        
         postgresVersion:
           title: PostgreSQL Version
           type: string
           enum: ['15', '14', '13']
           default: '15'
-        
         storageSize:
           title: Storage Size
           type: string
           default: "10Gi"
-          description: "PVC size (e.g., 10Gi, 20Gi)"
-        
         memoryLimit:
           title: Memory Limit
           type: string
           default: "512Mi"
-        
         cpuLimit:
           title: CPU Limit
           type: string
           default: "500m"
+        gitopsRepoUrl:
+          title: GitOps Repository URL
+          type: string
+          default: "https://github.com/your-org/Diplom"
 
   steps:
-    - id: clone-gitops
-      name: Clone GitOps Repository
-      action: fetch:git
-      input:
-        url: ${{ parameters.gitopsRepoUrl }}
-        branch: main
-        targetPath: ./gitops
-
-    - id: generate-postgres
+    - id: generate-manifests
       name: Generate PostgreSQL Manifests
       action: fetch:template
       input:
         url: ./skeleton-flux
-        targetPath: ./gitops/infrastructure/postgres/${{ parameters.componentId }}
+        targetPath: ./generated/infrastructure/postgres/${{ parameters.componentId }}
         values:
           componentId: ${{ parameters.componentId }}
           namespace: ${{ parameters.namespace }}
@@ -84,19 +72,24 @@ spec:
           memoryLimit: ${{ parameters.memoryLimit }}
           cpuLimit: ${{ parameters.cpuLimit }}
 
-    - id: commit-and-push
-      name: Commit to GitOps
+    - id: push-to-gitops
+      name: Push to GitOps Repository
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
         branch: main
-        commitMessage: "Add PostgreSQL database ${{ parameters.componentId }}"
-        path: ./gitops
+        commitMessage: "Add PostgreSQL database ${{ parameters.componentId }}
+        
+        Database: ${{ parameters.databaseName }}
+        User: ${{ parameters.databaseUser }}
+        Version: ${{ parameters.postgresVersion }}
+        Storage: ${{ parameters.storageSize }}"
+        sourcePath: ./generated
+        skipClone: true          
 
   output:
     links:
       - title: PostgreSQL Manifests
         url: ${{ parameters.gitopsRepoUrl }}/tree/main/infrastructure/postgres/${{ parameters.componentId }}
       - title: Connection Info
-        url: "#"
-        text: "Host: ${{ parameters.componentId }}.${{ parameters.namespace }}.svc.cluster.local"
+        text: "Host: ${{ parameters.componentId }}.${{ parameters.namespace }}.svc.cluster.local:5432"

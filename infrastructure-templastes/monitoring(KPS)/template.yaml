@@ -3,7 +3,7 @@ kind: Template
 metadata:
   name: infra-monitoring
   title: Monitoring Stack
-  description: Lightweight Prometheus + Grafana for kind cluster
+  description: Lightweight Prometheus + Grafana
 spec:
   owner: platform-team
   type: infrastructure
@@ -15,39 +15,49 @@ spec:
         - namespace
       properties:
         componentId:
+          title: Service Name
           type: string
           default: "monitoring"
         namespace:
+          title: Namespace
           type: string
           default: "monitoring"
         grafanaPassword:
+          title: Grafana Admin Password
           type: string
           default: "admin"
         storageSize:
+          title: Prometheus Storage Size
           type: string
           default: "10Gi"
+        gitopsRepoUrl:
+          title: GitOps Repository URL
+          type: string
 
   steps:
-    - id: clone-gitops
-      action: fetch:git
-      input:
-        url: ${{ parameters.gitopsRepoUrl }}
-        targetPath: ./gitops
-
-    - id: generate-monitoring
+    - id: generate-manifests
+      name: Generate Monitoring Manifests
       action: fetch:template
       input:
         url: ./skeleton-flux
-        targetPath: ./gitops/infrastructure/monitoring
+        targetPath: ./generated/infrastructure/monitoring
         values:
           componentId: ${{ parameters.componentId }}
           namespace: ${{ parameters.namespace }}
           grafanaPassword: ${{ parameters.grafanaPassword }}
           storageSize: ${{ parameters.storageSize }}
 
-    - id: commit
+    - id: push-to-gitops
+      name: Push to GitOps Repository
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
+        branch: main
         commitMessage: "Add monitoring stack"
-        path: ./gitops
+        sourcePath: ./generated
+        skipClone: true
+
+  output:
+    links:
+      - title: Monitoring Manifests
+        url: ${{ parameters.gitopsRepoUrl }}/tree/main/infrastructure/monitoring
