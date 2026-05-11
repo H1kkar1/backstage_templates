@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${{ parameters.componentId }}
+  namespace: ${{ parameters.namespace }}
+  labels:
+    app: ${{ parameters.componentId }}
+    component: message-broker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${{ parameters.componentId }}
+  template:
+    metadata:
+      labels:
+        app: ${{ parameters.componentId }}
+        component: message-broker
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:${{ parameters.rabbitmqVersion }}
+        ports:
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: management
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: ${{ parameters.componentId }}-secret
+              key: RABBITMQ_DEFAULT_USER
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: ${{ parameters.componentId }}-secret
+              key: RABBITMQ_DEFAULT_PASS
+        - name: RABBITMQ_ERLANG_COOKIE
+          valueFrom:
+            secretKeyRef:
+              name: ${{ parameters.componentId }}-secret
+              key: RABBITMQ_ERLANG_COOKIE
+        volumeMounts:
+        - name: rabbitmq-config
+          mountPath: /etc/rabbitmq
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: ${{ parameters.memoryLimit }}
+            cpu: ${{ parameters.cpuLimit }}
+        livenessProbe:
+          tcpSocket:
+            port: 5672
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 5672
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: rabbitmq-config
+        configMap:
+          name: ${{ parameters.componentId }}-config
+      - name: rabbitmq-data
+        persistentVolumeClaim:
+          claimName: ${{ parameters.componentId }}-pvc

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${{ parameters.componentId }}
+  namespace: ${{ parameters.namespace }}
+  labels:
+    app: ${{ parameters.componentId }}
+    component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${{ parameters.componentId }}
+  template:
+    metadata:
+      labels:
+        app: ${{ parameters.componentId }}
+        component: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:${{ parameters.postgresVersion }}-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: ${{ parameters.componentId }}-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ${{ parameters.componentId }}-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: ${{ parameters.componentId }}-secret
+              key: POSTGRES_DB
+        - name: PGDATA
+          valueFrom:
+            configMapKeyRef:
+              name: ${{ parameters.componentId }}-config
+              key: PGDATA
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: ${{ parameters.memoryLimit }}
+            cpu: ${{ parameters.cpuLimit }}
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - ${{ parameters.databaseUser }}
+            - -d
+            - ${{ parameters.databaseName }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - ${{ parameters.databaseUser }}
+            - -d
+            - ${{ parameters.databaseName }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: ${{ parameters.componentId }}-pvc

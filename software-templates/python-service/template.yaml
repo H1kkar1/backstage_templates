@@ -1,85 +1,153 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: default-system
-  title: Create a new Default System Service
-  description: Creates a new service with CI/CD and K8s manifests
+  name: python-service
+  title: Python Service with Optional Ingress
+  description: Deploy Python service with optional ingress and shared namespace support
 spec:
   owner: platform-team
   type: service
 
   parameters:
-    - title: Service Details
+    - title: "Service Details"
       required:
         - componentId
         - owner
       properties:
         componentId:
-          title: Component Name
+          title: Service Name
           type: string
-          description: Unique name of your service (e.g., payment-api)
-          pattern: '^[a-z0-9-]+$'
+          pattern: '^[a-z][a-z0-9-]*$'
+        
         owner:
-          title: Owner
+          title: Owner Team
           type: string
-          description: Team name from Backstage (e.g., team-a)
+        
         description:
           title: Description
           type: string
-        port:
-          title: Application Port
-          type: number
-          default: 8080
-    - title: Infrastructure & Resources
+
+    - title: "Namespace Configuration"
       properties:
-        cpuLimit:
+        namespaceStrategy:
+          title: Namespace Strategy
           type: string
-          default: '500m'
-        memoryLimit:
+          enum:
+            - create-new     
+            - use-existing   
+          default: create-new
+          ui:widget: radio
+        
+        namespace:
+          title: Namespace Name
           type: string
-          default: '512Mi'
-        serviceType:
-          title: Service Type
+          description: "Kubernetes namespace for deployment"
+          default: "default"
+          help: "If 'create-new' selected, this namespace will be created. If 'use-existing', it must already exist."
+        
+        createNamespaceResources:
+          title: Create ResourceQuota & LimitRange?
+          type: boolean
+          default: false
+          description: "Add resource quotas and limits to the namespace"
+          ui:widget: checkbox
+
+    - title: "Ingress Configuration"
+      properties:
+        exposeService:
+          title: Expose via Ingress?
+          type: boolean
+          default: false
+          description: "Create Ingress to expose service externally"
+        
+        hostname:
+          title: Domain Name
           type: string
-          enum: ['backend', 'frontend']
-          default: 'backend'
+          description: "e.g., api.your-domain.com"
+          help: "Required if exposeService is true"
+          ui:show: 
+            condition: exposeService == true
+        
+        tlsEnabled:
+          title: Enable TLS
+          type: boolean
+          default: true
+          ui:show:
+            condition: exposeService == true
+        
+        ingressClass:
+          title: Ingress Class
+          type: string
+          default: "nginx"
+          enum: ["nginx", "traefik", "kong"]
+          ui:show:
+            condition: exposeService == true
 
   steps:
-    - id: fetch-skeleton
-      name: Fetch Skeleton + Apply Variables
+    - id: clone-gitops
+      name: Clone GitOps Repository
+      action: fetch:git
+      input:
+        url: ${{ parameters.gitopsRepoUrl }}
+        branch: main
+        targetPath: ./gitops-temp
+    - id: setup-namespace
+      name: Setup Namespace
       action: fetch:template
       input:
-        url: ./skeleton
+        url: ./skeleton-flux
+        targetPath: ./gitops-temp/infrastructure/namespaces/${{ parameters.namespace }}
+        values:
+          name: ${{ parameters.namespace }}
+          createResources: ${{ parameters.createNamespaceResources }}
+  
+          skipCreation: ${{ parameters.namespaceStrategy == 'use-existing' }}
+    - id: generate-manifests
+      name: Generate Application Manifests
+      action: fetch:template
+      input:
+        url: ./skeleton-flux
+        targetPath: ./gitops-temp/apps/${{ parameters.componentId }}
         values:
           componentId: ${{ parameters.componentId }}
-          port: ${{ parameters.port }}
-          cpuLimit: ${{ parameters.cpuLimit }}
-          memoryLimit: ${{ parameters.memoryLimit }}
-          serviceType: ${{ parameters.serviceType }}
-          dockerImage: your-registry/${{ parameters.componentId }}:latest 
+          namespace: ${{ parameters.namespace }}
+          port: 8000
+          exposeService: ${{ parameters.exposeService }}
+          hostname: ${{ parameters.hostname }}
+          tlsEnabled: ${{ parameters.tlsEnabled }}
+          ingressClass: ${{ parameters.ingressClass }}
 
-    - id: publish-github
-      name: Publish to GitHub
+    - id: create-code-repo
+      name: Create Service Code Repository
       action: publish:github
       input:
-        allowedHosts: ['github.com']
-        description: ${{ parameters.description }}
-        repoUrl: github.com?owner=your-org&repo=${{ parameters.componentId }}
+        repoUrl: github.com?owner=${{ parameters.owner }}&repo=${{ parameters.componentId }}
         defaultBranch: main
-        sourcePath: ./source
-        repoVisibility: public
+        repoVisibility: private
+        sourcePath: ./skeleton-code
+        description: ${{ parameters.description }}
+    - id: commit-gitops
+      name: Commit GitOps Changes
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.gitopsRepoUrl }}
+        branch: main
+        commitMessage: "Add ${{ parameters.componentId }} to namespace ${{ parameters.namespace }}"
+        path: ./gitops-temp
 
-    - id: register-catalog
-      name: Register Component in Catalog
+    - id: register
+      name: Register in Catalog
       action: catalog:register
       input:
-        repoContentsUrl: ${{ steps['publish-github'].output.repoContentsUrl }}
+        repoContentsUrl: ${{ steps['create-code-repo'].output.repoContentsUrl }}
         catalogInfoPath: '/catalog-info.yaml'
 
   output:
     links:
-      - title: Go to Repository
-        url: ${{ steps['publish-github'].output.remoteUrl }}
-      - title: Open in Catalog
-        icon: catalog
-        entityRef: ${{ steps['register-catalog'].output.entityRef }}
+      - title: Service Repository
+        url: ${{ steps['create-code-repo'].output.remoteUrl }}
+      - title: GitOps Manifests
+        url: ${{ parameters.gitopsRepoUrl }}/tree/main/apps/${{ parameters.componentId }}
+      - if: ${{ parameters.exposeService }}
+        title: Service URL
+        url: https://${{ parameters.hostname }}

@@ -1,0 +1,102 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: infra-postgres
+  title: PostgreSQL Database
+  description: Deploys PostgreSQL database without operators
+spec:
+  owner: platform-team
+  type: infrastructure
+
+  parameters:
+    - title: PostgreSQL Configuration
+      required:
+        - componentId
+        - namespace
+        - databaseName
+        - databaseUser
+      properties:
+        componentId:
+          title: Service Name
+          type: string
+          pattern: '^[a-z][a-z0-9-]*$'
+          default: "postgres"
+        
+        namespace:
+          title: Namespace
+          type: string
+          default: "databases"
+        
+        databaseName:
+          title: Database Name
+          type: string
+          default: "appdb"
+        
+        databaseUser:
+          title: Database User
+          type: string
+          default: "appuser"
+        
+        postgresVersion:
+          title: PostgreSQL Version
+          type: string
+          enum: ['15', '14', '13']
+          default: '15'
+        
+        storageSize:
+          title: Storage Size
+          type: string
+          default: "10Gi"
+          description: "PVC size (e.g., 10Gi, 20Gi)"
+        
+        memoryLimit:
+          title: Memory Limit
+          type: string
+          default: "512Mi"
+        
+        cpuLimit:
+          title: CPU Limit
+          type: string
+          default: "500m"
+
+  steps:
+    - id: clone-gitops
+      name: Clone GitOps Repository
+      action: fetch:git
+      input:
+        url: ${{ parameters.gitopsRepoUrl }}
+        branch: main
+        targetPath: ./gitops
+
+    - id: generate-postgres
+      name: Generate PostgreSQL Manifests
+      action: fetch:template
+      input:
+        url: ./skeleton-flux
+        targetPath: ./gitops/infrastructure/postgres/${{ parameters.componentId }}
+        values:
+          componentId: ${{ parameters.componentId }}
+          namespace: ${{ parameters.namespace }}
+          databaseName: ${{ parameters.databaseName }}
+          databaseUser: ${{ parameters.databaseUser }}
+          postgresVersion: ${{ parameters.postgresVersion }}
+          storageSize: ${{ parameters.storageSize }}
+          memoryLimit: ${{ parameters.memoryLimit }}
+          cpuLimit: ${{ parameters.cpuLimit }}
+
+    - id: commit-and-push
+      name: Commit to GitOps
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.gitopsRepoUrl }}
+        branch: main
+        commitMessage: "Add PostgreSQL database ${{ parameters.componentId }}"
+        path: ./gitops
+
+  output:
+    links:
+      - title: PostgreSQL Manifests
+        url: ${{ parameters.gitopsRepoUrl }}/tree/main/infrastructure/postgres/${{ parameters.componentId }}
+      - title: Connection Info
+        url: "#"
+        text: "Host: ${{ parameters.componentId }}.${{ parameters.namespace }}.svc.cluster.local"

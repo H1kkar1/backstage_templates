@@ -1,0 +1,78 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: infra-rabbitmq
+  title: RabbitMQ Message Broker
+  description: Deploys RabbitMQ message broker
+spec:
+  owner: platform-team
+  type: infrastructure
+
+  parameters:
+    - title: RabbitMQ Configuration
+      required:
+        - componentId
+        - namespace
+      properties:
+        componentId:
+          title: Service Name
+          type: string
+          default: "rabbitmq"
+        
+        namespace:
+          title: Namespace
+          type: string
+          default: "message-queue"
+        
+        rabbitmqVersion:
+          title: RabbitMQ Version
+          type: string
+          default: "3.12-management-alpine"
+        
+        defaultUser:
+          title: Default Username
+          type: string
+          default: "admin"
+        
+        storageSize:
+          title: Storage Size
+          type: string
+          default: "10Gi"
+        
+        memoryLimit:
+          title: Memory Limit
+          type: string
+          default: "1Gi"
+        
+        cpuLimit:
+          title: CPU Limit
+          type: string
+          default: "500m"
+
+  steps:
+    - id: clone-gitops
+      action: fetch:git
+      input:
+        url: ${{ parameters.gitopsRepoUrl }}
+        targetPath: ./gitops
+
+    - id: generate-rabbitmq
+      action: fetch:template
+      input:
+        url: ./skeleton-flux
+        targetPath: ./gitops/infrastructure/rabbitmq/${{ parameters.componentId }}
+        values:
+          componentId: ${{ parameters.componentId }}
+          namespace: ${{ parameters.namespace }}
+          rabbitmqVersion: ${{ parameters.rabbitmqVersion }}
+          defaultUser: ${{ parameters.defaultUser }}
+          storageSize: ${{ parameters.storageSize }}
+          memoryLimit: ${{ parameters.memoryLimit }}
+          cpuLimit: ${{ parameters.cpuLimit }}
+
+    - id: commit
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.gitopsRepoUrl }}
+        commitMessage: "Add RabbitMQ ${{ parameters.componentId }}"
+        path: ./gitops

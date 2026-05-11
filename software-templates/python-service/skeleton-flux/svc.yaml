@@ -7,6 +7,6 @@ spec:
     app: ${{ parameters.componentId }}
   ports:
     - protocol: TCP
-      port: 80
+      port: ${{ parameters.port }}
       targetPort: ${{ parameters.port }}
   type: ClusterIP

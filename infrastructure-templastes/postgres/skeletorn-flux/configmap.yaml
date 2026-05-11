@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${{ parameters.componentId }}-config
+  namespace: ${{ parameters.namespace }}
+data:
+  POSTGRES_DB: ${{ parameters.databaseName }}
+  POSTGRES_USER: ${{ parameters.databaseUser }}
+  POSTGRES_VERSION: ${{ parameters.postgresVersion }}
+  PGDATA: /var/lib/postgresql/data/pgdata

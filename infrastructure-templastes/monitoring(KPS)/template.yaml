@@ -1,0 +1,53 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: infra-monitoring
+  title: Monitoring Stack
+  description: Lightweight Prometheus + Grafana for kind cluster
+spec:
+  owner: platform-team
+  type: infrastructure
+
+  parameters:
+    - title: Monitoring Configuration
+      required:
+        - componentId
+        - namespace
+      properties:
+        componentId:
+          type: string
+          default: "monitoring"
+        namespace:
+          type: string
+          default: "monitoring"
+        grafanaPassword:
+          type: string
+          default: "admin"
+        storageSize:
+          type: string
+          default: "10Gi"
+
+  steps:
+    - id: clone-gitops
+      action: fetch:git
+      input:
+        url: ${{ parameters.gitopsRepoUrl }}
+        targetPath: ./gitops
+
+    - id: generate-monitoring
+      action: fetch:template
+      input:
+        url: ./skeleton-flux
+        targetPath: ./gitops/infrastructure/monitoring
+        values:
+          componentId: ${{ parameters.componentId }}
+          namespace: ${{ parameters.namespace }}
+          grafanaPassword: ${{ parameters.grafanaPassword }}
+          storageSize: ${{ parameters.storageSize }}
+
+    - id: commit
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.gitopsRepoUrl }}
+        commitMessage: "Add monitoring stack"
+        path: ./gitops

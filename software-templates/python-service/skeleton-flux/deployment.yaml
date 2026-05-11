@@ -1,7 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${{ parameters.componentId }}-deployment
+  name: ${{ parameters.componentId }}
+  namespace: ${{ parameters.namespace }}
   labels:
     app: ${{ parameters.componentId }}
     backstage.io/name: ${{ parameters.componentId }}
@@ -16,15 +17,19 @@ spec:
         app: ${{ parameters.componentId }}
     spec:
       containers:
-        - name: main
-          
-          image: ${{ parameters.dockerImage }}  
-          ports:
-            - containerPort: ${{ parameters.port }}
-          env:
-            - name: SERVICE_TYPE
-              value: ${{ parameters.serviceType }}
-          resources:
-            limits:
-              cpu: ${{ parameters.cpuLimit }}
-              memory: ${{ parameters.memoryLimit }}
+      - name: app
+        image: ghcr.io/your-org/${{ parameters.componentId }}:latest
+        ports:
+        - containerPort: ${{ parameters.port }}
+        env:
+        - name: NAMESPACE
+          value: ${{ parameters.namespace }}
+        - name: SERVICE_NAME
+          value: ${{ parameters.componentId }}
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

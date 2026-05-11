@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${{ parameters.componentId }}
+  namespace: ${{ parameters.namespace }}
+  labels:
+    app: ${{ parameters.componentId }}
+    component: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${{ parameters.componentId }}
+  template:
+    metadata:
+      labels:
+        app: ${{ parameters.componentId }}
+        component: cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:${{ parameters.redisVersion }}
+        ports:
+        - containerPort: 6379
+          name: redis
+        command:
+          - redis-server
+        args:
+          - /usr/local/etc/redis/redis.conf
+        volumeMounts:
+        - name: redis-config
+          mountPath: /usr/local/etc/redis
+        - name: redis-storage
+          mountPath: /data
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: ${{ parameters.memoryLimit }}
+            cpu: ${{ parameters.cpuLimit }}
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: redis-config
+        configMap:
+          name: ${{ parameters.componentId }}-config
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: ${{ parameters.componentId }}-pvc

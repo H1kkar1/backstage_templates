@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${{ parameters.componentId }}-config
+  namespace: ${{ parameters.namespace }}
+data:
+  redis.conf: |
+    maxmemory ${{ parameters.maxmemory }}
+    maxmemory-policy allkeys-lru
+    appendonly yes
+    appendfsync everysec
+    save 900 1
+    save 300 10
