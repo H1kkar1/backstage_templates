@@ -14,4 +14,4 @@ spec:
     - ./infrastructure-templates/postgres/template.yaml
     - ./infrastructure-templates/redis/template.yaml
     - ./infrastructure-templates/rabbitmq/template.yaml
-    - ./infrastructure-templastes/monitoring\(KPS\)/template.yaml
+    - ./infrastructure-templastes/monitoring/template.yaml
