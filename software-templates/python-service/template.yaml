@@ -90,10 +90,7 @@ spec:
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
-        branch: main
-        commitMessage: "Add ${{ parameters.componentId }} service for ${{ parameters.owner }} team"
         sourcePath: ./generated
-        skipClone: true
 
     # ШАГ 4: Регистрируем компонент в Backstage
     - id: register-component
