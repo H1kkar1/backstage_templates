@@ -39,7 +39,7 @@ spec:
         codeRepoUrl:
           title: Code Repository URL
           type: string
-          default: "github.com?owner=your-org&repo="
+          default: "github.com?owner=H1KKAR1&repo="
         gitopsRepoUrl:
           title: GitOps Repository URL
           type: string
@@ -59,22 +59,18 @@ spec:
 
   steps:
     # ШАГ 1: Создаем репозиторий с кодом пользователя
-    - id: generate-manifests
-      name: Generate Kubernetes Manifests
-      action: fetch:template
+    - id: create-code-repo
+      name: Create Service Code Repository
+      action: publish:github
       input:
-        url: https://github.com/H1KKAR1/backstage_templates/tree/master/software-templates/python-service/skeleton-flux
-        targetPath: ./generated/apps/${{ parameters.owner }}/${{ parameters.componentId }}
-        values:
-          componentId: ${{ parameters.componentId }}
-          namespace: ${{ parameters.namespace }}
-          port: ${{ parameters.port }}
-          owner: ${{ parameters.owner }}
-          exposeService: ${{ parameters.exposeService }}
-          hostname: ${{ parameters.hostname }}
+        repoUrl: ${{ parameters.codeRepoUrl }}${{ parameters.componentId }}
+        defaultBranch: main
+        repoVisibility: private
+        description: ${{ parameters.description }}
+        sourcePath: ./skeleton-code
 
     # ШАГ 2: Генерируем Flux манифесты
-    - id: generate-manifests
+    - id: generate-flux-manifests
       name: Generate Kubernetes Manifests
       action: fetch:template
       input:
