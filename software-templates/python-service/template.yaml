@@ -86,11 +86,15 @@ spec:
 
     # ШАГ 3: Пушим манифесты в GitOps репозиторий
     - id: push-to-gitops
-      name: Push to GitOps Repository
-      action: github:repo:push
+      name: Create Pull Request
+      action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
-        sourcePath: ./generated
+        title: "Add ${{ parameters.componentId }} service"
+        description: "This PR adds Kubernetes manifests for ${{ parameters.componentId }}"
+        branchName: backstage/add-${{ parameters.componentId }}
+        targetPath: ./generated
+        force: true
 
     # ШАГ 4: Регистрируем компонент в Backstage
     - id: register-component
