@@ -74,7 +74,7 @@ spec:
       name: Generate Kubernetes Manifests
       action: fetch:template
       input:
-        url: ./skeleton-flux
+        url: https://github.com/H1KKAR1/backstage_templates/tree/master/software-templates/python-service/skeleton-flux
         targetPath: ./generated/apps/${{ parameters.owner }}/${{ parameters.componentId }}
         values:
           componentId: ${{ parameters.componentId }}
