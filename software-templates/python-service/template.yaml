@@ -43,7 +43,7 @@ spec:
         gitopsRepoUrl:
           title: GitOps Repository URL
           type: string
-          default: "https://github.com/H1KKAR1/Diplom"
+          default: "github.com?owner=H1KKAR1&repo=Diplom"
 
     - title: Ingress Configuration
       properties:
@@ -58,7 +58,17 @@ spec:
             condition: exposeService == true
 
   steps:
-    # ШАГ 1: Создаем репозиторий с кодом пользователя
+    - id: generate-code
+      name: Generate Application Code
+      action: fetch:template
+      input:
+        url: ./skeleton-code
+        targetPath: ./generated-code
+        values:
+          componentId: ${{ parameters.componentId }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+
     - id: create-code-repo
       name: Create Service Code Repository
       action: publish:github
@@ -67,9 +77,8 @@ spec:
         defaultBranch: main
         repoVisibility: private
         description: ${{ parameters.description }}
-        sourcePath: ./skeleton-code
+        sourcePath: ./generated-code
 
-    # ШАГ 2: Генерируем Flux манифесты
     - id: generate-flux-manifests
       name: Generate Kubernetes Manifests
       action: fetch:template
@@ -84,17 +93,18 @@ spec:
           exposeService: ${{ parameters.exposeService }}
           hostname: ${{ parameters.hostname }}
 
-    # ШАГ 3: Пушим манифесты в GitOps репозиторий
     - id: push-to-gitops
-      name: Create Pull Request
+      name: Push to GitOps Repository
       action: publish:github:pull-request
       input:
-        repoUrl: github.com?owner=H1KKAR1&repo=Diplom
+        repoUrl: ${{ parameters.gitopsRepoUrl }}
         title: "Add ${{ parameters.componentId }} service"
         description: "This PR adds Kubernetes manifests for ${{ parameters.componentId }}"
         branchName: backstage/add-${{ parameters.componentId }}
         sourcePath: ./generated
-    # ШАГ 4: Регистрируем компонент в Backstage
+        targetPath: .
+        update: true
+
     - id: register-component
       name: Register Component in Catalog
       action: catalog:register
