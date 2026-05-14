@@ -89,13 +89,11 @@ spec:
       name: Create Pull Request
       action: publish:github:pull-request
       input:
-        repoUrl: ${{ parameters.gitopsRepoUrl }}
+        repoUrl: github.com?owner=H1KKAR1&repo=Diplom
         title: "Add ${{ parameters.componentId }} service"
         description: "This PR adds Kubernetes manifests for ${{ parameters.componentId }}"
         branchName: backstage/add-${{ parameters.componentId }}
-        targetPath: ./generated
-        force: true
-
+        sourcePath: ./generated
     # ШАГ 4: Регистрируем компонент в Backstage
     - id: register-component
       name: Register Component in Catalog
