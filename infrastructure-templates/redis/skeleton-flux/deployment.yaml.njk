@@ -1,24 +1,23 @@
-# deployment.yaml.njk
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
+  name: __COMPONENT_ID__
+  namespace: __NAMESPACE__
   labels:
-    app: ${{ parameters.componentId }}
+    app: __COMPONENT_ID__
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ${{ parameters.componentId }}
+      app: __COMPONENT_ID__
   template:
     metadata:
       labels:
-        app: ${{ parameters.componentId }}
+        app: __COMPONENT_ID__
     spec:
       containers:
       - name: redis
-        image: redis:${{ parameters.redisVersion }}
+        image: redis:__REDIS_VERSION__
         ports:
         - containerPort: 6379
         resources:
@@ -26,8 +25,8 @@ spec:
             memory: "128Mi"
             cpu: "100m"
           limits:
-            memory: ${{ parameters.memoryLimit }}
-            cpu: ${{ parameters.cpuLimit }}
+            memory: __MEMORY_LIMIT__
+            cpu: __CPU_LIMIT__
         volumeMounts:
         - name: redis-config
           mountPath: /usr/local/etc/redis
@@ -36,7 +35,7 @@ spec:
       volumes:
       - name: redis-config
         configMap:
-          name: ${{ parameters.componentId }}-config
+          name: __COMPONENT_ID__-config
       - name: redis-storage
         persistentVolumeClaim:
-          claimName: ${{ parameters.componentId }}-pvc
+          claimName: __COMPONENT_ID__-pvc

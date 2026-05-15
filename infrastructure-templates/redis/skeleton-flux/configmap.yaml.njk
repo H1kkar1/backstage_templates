@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ${{ parameters.componentId }}-config
-  namespace: ${{ parameters.namespace }}
+  name: __COMPONENT_ID__-config
+  namespace: __NAMESPACE__
 data:
   redis.conf: |
-    maxmemory ${{ parameters.maxmemory }}
+    maxmemory __MAXMEMORY__
     maxmemory-policy allkeys-lru
     appendonly yes
     save 900 1
-    save 300 10 
+    save 300 10

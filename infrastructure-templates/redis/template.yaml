@@ -50,40 +50,34 @@ spec:
           default: "github.com?owner=H1KKAR1&repo=Diplom"
 
   steps:
-    - id: clone-templates
-      name: Clone templates repository
-      action: fetch:git
-      input:
-        url: https://github.com/H1KKAR1/backstage_templates
-        branch: master
-        targetPath: ./templates
+  - id: clone-templates
+    name: Clone templates repository
+    action: fetch:git
+    input:
+      url: https://github.com/H1KKAR1/backstage_templates
+      branch: master
+      targetPath: ./templates
 
-    - id: generate-manifests
-      name: Generate Redis Manifests
-      action: fetch:template
-      input:
-        url: ./templates/infrastructure-templates/redis/skeleton-flux
-        targetPath: ./generated/infrastructure/redis/${{ parameters.componentId }}
-        values:
-          componentId: ${{ parameters.componentId }}
-          namespace: ${{ parameters.namespace }}
-          redisVersion: ${{ parameters.redisVersion }}
-          maxmemory: ${{ parameters.maxmemory }}
-          storageSize: ${{ parameters.storageSize }}
-          memoryLimit: ${{ parameters.memoryLimit }}
-          cpuLimit: ${{ parameters.cpuLimit }}
+  - id: copy-manifests
+    name: Copy manifests
+    action: fetch:template
+    input:
+      url: ./templates/infrastructure-templates/redis/skeleton-flux
+      targetPath: ./generated/infrastructure/redis/${{ parameters.componentId }}
 
-    - id: push-to-gitops
-      name: Push to GitOps Repository
-      action: publish:github:pull-request
-      input:
-        repoUrl: ${{ parameters.gitopsRepoUrl }}
-        title: "Add Redis ${{ parameters.componentId }}"
-        description: "This PR adds Redis cache instance\n\n- Version: ${{ parameters.redisVersion }}\n- Max Memory: ${{ parameters.maxmemory }}\n- Storage: ${{ parameters.storageSize }}"
-        branchName: backstage/add-redis-${{ parameters.componentId }}
-        sourcePath: ./generated
-        targetPath: .
-        update: true
+  - id: replace-variables
+    name: Replace variables in manifests
+    action: debug:exec
+    input:
+      command: |
+        cd ./generated/infrastructure/redis/${{ parameters.componentId }}
+        sed -i 's/__COMPONENT_ID__/${{ parameters.componentId }}/g' *.yaml
+        sed -i 's/__NAMESPACE__/${{ parameters.namespace }}/g' *.yaml
+        sed -i 's/__REDIS_VERSION__/${{ parameters.redisVersion }}/g' deployment.yaml
+        sed -i 's/__MAXMEMORY__/${{ parameters.maxmemory }}/g' configmap.yaml
+        sed -i 's/__STORAGE_SIZE__/${{ parameters.storageSize }}/g' pvc.yaml
+        sed -i 's/__MEMORY_LIMIT__/${{ parameters.memoryLimit }}/g' deployment.yaml
+        sed -i 's/__CPU_LIMIT__/${{ parameters.cpuLimit }}/g' deployment.yaml
 
   output:
     links:
