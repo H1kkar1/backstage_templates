@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: __COMPONENT_ID__
-  namespace: __NAMESPACE__
+  name: ${{ values.componentId }}
+  namespace: ${{ values.namespace }}
   labels:
-    app: __COMPONENT_ID__
+    app: ${{ values.componentId }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: __COMPONENT_ID__
+      app: ${{ values.componentId }}
   template:
     metadata:
       labels:
-        app: __COMPONENT_ID__
+        app: ${{ values.componentId }}
     spec:
       containers:
       - name: redis
-        image: redis:__REDIS_VERSION__
+        image: redis:${{ values.redisVersion }}
         ports:
         - containerPort: 6379
         resources:
@@ -25,8 +25,8 @@ spec:
             memory: "128Mi"
             cpu: "100m"
           limits:
-            memory: __MEMORY_LIMIT__
-            cpu: __CPU_LIMIT__
+            memory: ${{ values.memoryLimit }}
+            cpu: ${{ values.cpuLimit }}
         volumeMounts:
         - name: redis-config
           mountPath: /usr/local/etc/redis
@@ -35,7 +35,7 @@ spec:
       volumes:
       - name: redis-config
         configMap:
-          name: __COMPONENT_ID__-config
+          name: ${{ values.componentId }}-config
       - name: redis-storage
         persistentVolumeClaim:
-          claimName: __COMPONENT_ID__-pvc
+          claimName: ${{ values.componentId }}-pvc
