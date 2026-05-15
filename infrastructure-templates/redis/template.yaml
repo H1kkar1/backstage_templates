@@ -13,6 +13,11 @@ spec:
       required:
         - componentId
         - namespace
+        - redisVersion
+        - maxmemory
+        - storageSize
+        - memoryLimit
+        - cpuLimit
       properties:
         componentId:
           title: Service Name
@@ -50,6 +55,13 @@ spec:
           default: "github.com?owner=H1KKAR1&repo=Diplom"
 
   steps:
+    # Отладка: выводим значения параметров
+    - id: debug-values
+      name: Debug values
+      action: debug:log
+      input:
+        message: "Values - componentId: ${{ parameters.componentId }}, namespace: ${{ parameters.namespace }}, redisVersion: ${{ parameters.redisVersion }}, maxmemory: ${{ parameters.maxmemory }}, storageSize: ${{ parameters.storageSize }}, memoryLimit: ${{ parameters.memoryLimit }}, cpuLimit: ${{ parameters.cpuLimit }}"
+
     - id: generate-manifests
       name: Generate Redis Manifests
       action: fetch:template
@@ -65,13 +77,20 @@ spec:
           memoryLimit: ${{ parameters.memoryLimit }}
           cpuLimit: ${{ parameters.cpuLimit }}
 
+    # Отладка: проверяем, что сгенерировалось
+    - id: debug-files
+      name: Debug generated files
+      action: debug:log
+      input:
+        message: "Generated files in ./generated/infrastructure/redis/${{ parameters.componentId }}: ${{ fs.readdir('./generated/infrastructure/redis/${{ parameters.componentId }}') }}"
+
     - id: push-to-gitops
       name: Push to GitOps Repository
       action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
         title: "Add Redis ${{ parameters.componentId }}"
-        description: "This PR adds Redis cache instance"
+        description: "This PR adds Redis cache instance\n\n- Version: ${{ parameters.redisVersion }}\n- Max Memory: ${{ parameters.maxmemory }}\n- Storage: ${{ parameters.storageSize }}"
         branchName: backstage/add-redis-${{ parameters.componentId }}
         sourcePath: ./generated
         targetPath: .
