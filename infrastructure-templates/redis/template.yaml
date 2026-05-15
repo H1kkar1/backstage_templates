@@ -50,19 +50,11 @@ spec:
           default: "github.com?owner=H1KKAR1&repo=Diplom"
 
   steps:
-    - id: clone-templates
-      name: Clone templates repository
-      action: fetch:git
-      input:
-        url: https://github.com/H1KKAR1/backstage_templates
-        branch: master
-        targetPath: ./templates
-
     - id: generate-manifests
       name: Generate Redis Manifests
       action: fetch:template
       input:
-        url: ./templates/infrastructure-templates/redis/skeleton-flux
+        url: https://github.com/H1KKAR1/backstage_templates/tree/master/infrastructure-templates/redis/skeleton-flux
         targetPath: ./generated/infrastructure/redis/${{ parameters.componentId }}
         values:
           componentId: ${{ parameters.componentId }}
