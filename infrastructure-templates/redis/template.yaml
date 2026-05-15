@@ -1,102 +1,38 @@
-apiVersion: scaffolder.backstage.io/v1beta3
-kind: Template
-metadata:
-  name: infra-redis
-  title: Redis Cache
-  description: Deploys Redis standalone instance
-spec:
-  owner: platform-team
-  type: infrastructure
+steps:
+  # ШАГ 1: Клонируем репозиторий с шаблонами
+  - id: clone-templates
+    name: Clone templates repository
+    action: fetch:git
+    input:
+      url: https://github.com/H1KKAR1/backstage_templates
+      branch: master
+      targetPath: ./templates
 
-  parameters:
-    - title: Redis Configuration
-      required:
-        - componentId
-        - namespace
-        - redisVersion
-        - maxmemory
-        - storageSize
-        - memoryLimit
-        - cpuLimit
-      properties:
-        componentId:
-          title: Service Name
-          type: string
-          pattern: '^[a-z][a-z0-9-]*$'
-          default: "redis"
-        namespace:
-          title: Namespace
-          type: string
-          default: "databases"
-        redisVersion:
-          title: Redis Version
-          type: string
-          enum: ['7-alpine', '6-alpine']
-          default: '7-alpine'
-        maxmemory:
-          title: Max Memory
-          type: string
-          default: "256mb"
-        storageSize:
-          title: Storage Size
-          type: string
-          default: "5Gi"
-        memoryLimit:
-          title: Memory Limit
-          type: string
-          default: "512Mi"
-        cpuLimit:
-          title: CPU Limit
-          type: string
-          default: "200m"
-        gitopsRepoUrl:
-          title: GitOps Repository URL
-          type: string
-          default: "github.com?owner=H1KKAR1&repo=Diplom"
+  # ШАГ 2: Генерируем манифесты из локальной папки
+  - id: generate-manifests
+    name: Generate Redis Manifests
+    action: fetch:template
+    input:
+      url: ./templates/infrastructure-templates/redis/skeleton-flux
+      targetPath: ./generated/infrastructure/redis/${{ parameters.componentId }}
+      values:
+        componentId: ${{ parameters.componentId }}
+        namespace: ${{ parameters.namespace }}
+        redisVersion: ${{ parameters.redisVersion }}
+        maxmemory: ${{ parameters.maxmemory }}
+        storageSize: ${{ parameters.storageSize }}
+        memoryLimit: ${{ parameters.memoryLimit }}
+        cpuLimit: ${{ parameters.cpuLimit }}
 
-  steps:
-    # Отладка: выводим значения параметров
-    - id: debug-values
-      name: Debug values
-      action: debug:log
-      input:
-        message: "Values - componentId: ${{ parameters.componentId }}, namespace: ${{ parameters.namespace }}, redisVersion: ${{ parameters.redisVersion }}, maxmemory: ${{ parameters.maxmemory }}, storageSize: ${{ parameters.storageSize }}, memoryLimit: ${{ parameters.memoryLimit }}, cpuLimit: ${{ parameters.cpuLimit }}"
-
-    - id: generate-manifests
-      name: Generate Redis Manifests
-      action: fetch:template
-      input:
-        url: https://github.com/H1KKAR1/backstage_templates/tree/master/infrastructure-templates/redis/skeleton-flux
-        targetPath: ./generated/infrastructure/redis/${{ parameters.componentId }}
-        values:
-          componentId: ${{ parameters.componentId }}
-          namespace: ${{ parameters.namespace }}
-          redisVersion: ${{ parameters.redisVersion }}
-          maxmemory: ${{ parameters.maxmemory }}
-          storageSize: ${{ parameters.storageSize }}
-          memoryLimit: ${{ parameters.memoryLimit }}
-          cpuLimit: ${{ parameters.cpuLimit }}
-
-    # Отладка: проверяем, что сгенерировалось
-    - id: debug-files
-      name: Debug generated files
-      action: debug:log
-      input:
-        message: "Generated files in ./generated/infrastructure/redis/${{ parameters.componentId }}: ${{ fs.readdir('./generated/infrastructure/redis/${{ parameters.componentId }}') }}"
-
-    - id: push-to-gitops
-      name: Push to GitOps Repository
-      action: publish:github:pull-request
-      input:
-        repoUrl: ${{ parameters.gitopsRepoUrl }}
-        title: "Add Redis ${{ parameters.componentId }}"
-        description: "This PR adds Redis cache instance\n\n- Version: ${{ parameters.redisVersion }}\n- Max Memory: ${{ parameters.maxmemory }}\n- Storage: ${{ parameters.storageSize }}"
-        branchName: backstage/add-redis-${{ parameters.componentId }}
-        sourcePath: ./generated
-        targetPath: .
-        update: true
-
-  output:
-    links:
-      - title: Redis Manifests
-        url: ${{ parameters.gitopsRepoUrl }}/tree/main/infrastructure/redis/${{ parameters.componentId }}
+  # ШАГ 3: Пушим в GitOps репозиторий
+  - id: push-to-gitops
+    name: Push to GitOps Repository
+    action: publish:github:pull-request
+    input:
+      repoUrl: ${{ parameters.gitopsRepoUrl }}
+      title: "Add Redis ${{ parameters.componentId }}"
+      description: "This PR adds Redis cache instance"
+      branchName: backstage/add-redis-${{ parameters.componentId }}
+      sourcePath: ./generated
+      targetPath: .
+      update: true
