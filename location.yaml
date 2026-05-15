@@ -5,13 +5,13 @@ metadata:
   description: Collection of software templates for Diploma project
 spec:
   targets:
-    # Шаблоны приложений (используй полный GitHub URL)
-    - https://github.com/H1KKAR1/backstage_templates/blob/master/software-templates/default-system/template.yaml
-    - https://github.com/H1KKAR1/backstage_templates/blob/master/software-templates/python-service/template.yaml
-    - https://github.com/H1KKAR1/backstage_templates/blob/master/software-templates/react-frontend/template.yaml
+    # Шаблоны приложений
+    - ./software-templates/default-system/template.yaml
+    - ./software-templates/python-service/template.yaml
+    - ./software-templates/react-frontend/template.yaml
     
     # Инфраструктурные шаблоны
-    - https://github.com/H1KKAR1/backstage_templates/blob/master/infrastructure-templates/postgres/template.yaml
-    - https://github.com/H1KKAR1/backstage_templates/blob/master/infrastructure-templates/redis/template.yaml
-    - https://github.com/H1KKAR1/backstage_templates/blob/master/infrastructure-templates/rabbitmq/template.yaml
-    - https://github.com/H1KKAR1/backstage_templates/blob/master/infrastructure-templates/monitoring/template.yaml
+    - ./infrastructure-templates/postgres/template.yaml
+    - ./infrastructure-templates/redis/template.yaml
+    - ./infrastructure-templates/rabbitmq/template.yaml
+    - ./infrastructure-templates/monitoring/template.yaml
