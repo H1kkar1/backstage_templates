@@ -33,13 +33,14 @@ spec:
         gitopsRepoUrl:
           title: GitOps Repository URL
           type: string
+          default: "github.com?owner=H1KKAR1&repo=Diplom"
 
   steps:
     - id: generate-manifests
       name: Generate Monitoring Manifests
       action: fetch:template
       input:
-        url: ./skeleton-flux
+        url: https://github.com/H1KKAR1/backstage_templates/tree/master/infrastructure-templates/monitoring/skeleton-flux
         targetPath: ./generated/infrastructure/monitoring
         values:
           componentId: ${{ parameters.componentId }}
@@ -49,13 +50,15 @@ spec:
 
     - id: push-to-gitops
       name: Push to GitOps Repository
-      action: github:repo:push
+      action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
-        branch: main
-        commitMessage: "Add monitoring stack"
+        title: "Add monitoring stack"
+        description: "This PR adds Prometheus and Grafana monitoring stack"
+        branchName: backstage/add-monitoring
         sourcePath: ./generated
-        skipClone: true
+        targetPath: .
+        update: true
 
   output:
     links:

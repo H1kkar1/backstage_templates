@@ -53,14 +53,14 @@ spec:
         gitopsRepoUrl:
           title: GitOps Repository URL
           type: string
-          default: "https://github.com/your-org/Diplom"
+          default: "github.com?owner=H1KKAR1&repo=Diplom"
 
   steps:
     - id: generate-manifests
       name: Generate PostgreSQL Manifests
       action: fetch:template
       input:
-        url: ./skeleton-flux
+        url: https://github.com/H1KKAR1/backstage_templates/tree/master/infrastructure-templates/postgres/skeleton-flux
         targetPath: ./generated/infrastructure/postgres/${{ parameters.componentId }}
         values:
           componentId: ${{ parameters.componentId }}
@@ -74,18 +74,20 @@ spec:
 
     - id: push-to-gitops
       name: Push to GitOps Repository
-      action: github:repo:push
+      action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
-        branch: main
-        commitMessage: "Add PostgreSQL database ${{ parameters.componentId }}"
-        
-        Database: ${{ parameters.databaseName }}
-        User: ${{ parameters.databaseUser }}
-        Version: ${{ parameters.postgresVersion }}
-        Storage: ${{ parameters.storageSize }}"
+        title: "Add PostgreSQL database ${{ parameters.componentId }}"
+        description: |
+          This PR adds PostgreSQL database for team
+          - Database: ${{ parameters.databaseName }}
+          - User: ${{ parameters.databaseUser }}
+          - Version: ${{ parameters.postgresVersion }}
+          - Storage: ${{ parameters.storageSize }}
+        branchName: backstage/add-postgres-${{ parameters.componentId }}
         sourcePath: ./generated
-        skipClone: true          
+        targetPath: .
+        update: true
 
   output:
     links:
