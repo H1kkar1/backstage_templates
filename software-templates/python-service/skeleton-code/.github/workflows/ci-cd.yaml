@@ -1,3 +1,4 @@
+{% raw %}
 name: Python Service CI/CD
 
 on:
@@ -157,3 +158,4 @@ jobs:
           Triggered by: ${{ github.actor }}
           Commit: ${{ github.sha }}"
           git push origin main
+{% endraw %}
