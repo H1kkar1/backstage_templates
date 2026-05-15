@@ -62,7 +62,7 @@ spec:
       name: Generate Application Code
       action: fetch:template
       input:
-        url: ./skeleton-code
+        url: https://github.com/H1KKAR1/backstage_templates/tree/master/software-templates/python-service/skeleton-code
         targetPath: ./generated-code
         values:
           componentId: ${{ parameters.componentId }}
