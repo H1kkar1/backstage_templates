@@ -2,16 +2,12 @@ apiVersion: backstage.io/v1alpha1
 kind: Location
 metadata:
   name: diploma-templates
-  description: Collection of software templates for Diploma project
 spec:
   targets:
-    # Шаблоны приложений
-    - https://raw.githubusercontent.com/H1KKAR1/backstage_templates/master/software-templates/default-system/template.yaml
-    - https://raw.githubusercontent.com/H1KKAR1/backstage_templates/master/software-templates/python-service/template.yaml
-    - https://raw.githubusercontent.com/H1KKAR1/backstage_templates/master/software-templates/react-frontend/template.yaml
-    
-    # Инфраструктурные шаблоны
-    - https://raw.githubusercontent.com/H1KKAR1/backstage_templates/master/infrastructure-templates/postgres/template.yaml
-    - https://raw.githubusercontent.com/H1KKAR1/backstage_templates/master/infrastructure-templates/redis/template.yaml
-    - https://raw.githubusercontent.com/H1KKAR1/backstage_templates/master/infrastructure-templates/rabbitmq/template.yaml
-    - https://raw.githubusercontent.com/H1KKAR1/backstage_templates/master/infrastructure-templates/monitoring/template.yaml
+    - ./software-templates/default-system/template.yaml
+    - ./software-templates/python-service/template.yaml
+    - ./software-templates/react-frontend/template.yaml
+    - ./infrastructure-templates/postgres/template.yaml
+    - ./infrastructure-templates/redis/template.yaml
+    - ./infrastructure-templates/rabbitmq/template.yaml
+    - ./infrastructure-templates/monitoring/template.yaml
