@@ -1,19 +1,12 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: ${{ parameters.componentId }}
+  name: {{ parameters.componentId }}
   namespace: flux-system
-  labels:
-    app: ${{ parameters.componentId }}
 spec:
   interval: 5m
-  path: ./infrastructure/redis/${{ parameters.componentId }}
+  path: ./infrastructure/redis/{{ parameters.componentId }}
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
-  healthChecks:
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: ${{ parameters.componentId }}
-      namespace: ${{ parameters.namespace }}
