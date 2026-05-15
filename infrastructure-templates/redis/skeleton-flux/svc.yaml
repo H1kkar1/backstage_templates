@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: ${{ parameters.componentId }}
   namespace: ${{ parameters.namespace }}
+  labels:
+    app: ${{ parameters.componentId }}
 spec:
   type: ClusterIP
   ports:

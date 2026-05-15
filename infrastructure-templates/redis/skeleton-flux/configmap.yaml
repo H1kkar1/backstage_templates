@@ -11,3 +11,4 @@ data:
     appendfsync everysec
     save 900 1
     save 300 10
+    dir /data
