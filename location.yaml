@@ -1,8 +1,11 @@
 apiVersion: backstage.io/v1alpha1
 kind: Location
 metadata:
-  name: diploma-templates
-  description: Collection of software templates for Diploma project
+  name: diplom-templates
+  description: Import templates from backstage_templates
+spec:
+  targets:
+    - https://raw.githubusercontent.com/H1KKAR1/backstage_templates/master/location.yaml
 spec:
   targets:
     # Шаблоны приложений
