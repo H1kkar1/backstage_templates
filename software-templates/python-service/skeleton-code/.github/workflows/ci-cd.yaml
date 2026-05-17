@@ -1,4 +1,3 @@
-{% raw %}
 name: Python Service CI/CD
 
 on:
@@ -10,6 +9,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
 
 env:
   REGISTRY: ghcr.io
@@ -64,13 +68,27 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
+          format: 'table'
+          output: 'trivy-results.txt'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Run Trivy in SARIF format (for artifact)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
       
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v2
+      - name: Upload Trivy results as artifact
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: 'trivy-results.sarif'
+          name: trivy-scan-results
+          path: |
+            trivy-results.txt
+            trivy-results.sarif
+          retention-days: 30
 
   # JOB 3: Сборка и пуш образа
   build-and-push:
@@ -158,4 +176,3 @@ jobs:
           Triggered by: ${{ github.actor }}
           Commit: ${{ github.sha }}"
           git push origin main
-{% endraw %}
