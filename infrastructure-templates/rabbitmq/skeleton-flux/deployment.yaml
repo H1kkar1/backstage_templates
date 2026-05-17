@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
+  name: ${{ values.componentId }}
+  namespace: ${{ values.namespace }}
   labels:
-    app: ${{ parameters.componentId }}
+    app: ${{ values.componentId }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ${{ parameters.componentId }}
+      app: ${{ values.componentId }}
   template:
     metadata:
       labels:
-        app: ${{ parameters.componentId }}
+        app: ${{ values.componentId }}
     spec:
       containers:
       - name: rabbitmq
-        image: rabbitmq:${{ parameters.rabbitmqVersion }}
+        image: rabbitmq:${{ values.rabbitmqVersion }}
         ports:
         - containerPort: 5672
           name: amqp
@@ -27,17 +27,17 @@ spec:
         - name: RABBITMQ_DEFAULT_USER
           valueFrom:
             secretKeyRef:
-              name: ${{ parameters.componentId }}-secret
+              name: ${{ values.componentId }}-secret
               key: RABBITMQ_DEFAULT_USER
         - name: RABBITMQ_DEFAULT_PASS
           valueFrom:
             secretKeyRef:
-              name: ${{ parameters.componentId }}-secret
+              name: ${{ values.componentId }}-secret
               key: RABBITMQ_DEFAULT_PASS
         - name: RABBITMQ_ERLANG_COOKIE
           valueFrom:
             secretKeyRef:
-              name: ${{ parameters.componentId }}-secret
+              name: ${{ values.componentId }}-secret
               key: RABBITMQ_ERLANG_COOKIE
         volumeMounts:
         - name: rabbitmq-config
@@ -46,11 +46,11 @@ spec:
           mountPath: /var/lib/rabbitmq
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: ${{ values.memoryRequest }}
+            cpu: ${{ values.cpuRequest }}
           limits:
-            memory: ${{ parameters.memoryLimit }}
-            cpu: ${{ parameters.cpuLimit }}
+            memory: ${{ values.memoryLimit }}
+            cpu: ${{ values.cpuLimit }}
         livenessProbe:
           tcpSocket:
             port: 5672
@@ -64,7 +64,7 @@ spec:
       volumes:
       - name: rabbitmq-config
         configMap:
-          name: ${{ parameters.componentId }}-config
+          name: ${{ values.componentId }}-config
       - name: rabbitmq-data
         persistentVolumeClaim:
-          claimName: ${{ parameters.componentId }}-pvc
+          claimName: ${{ values.componentId }}-pvc

@@ -1,30 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
+  name: ${{ values.componentId }}
+  namespace: ${{ values.namespace }}
   labels:
-    app: ${{ parameters.componentId }}
-    team: ${{ parameters.owner }}
+    app: ${{ values.componentId }}
+    team: ${{ values.owner }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ${{ parameters.componentId }}
+      app: ${{ values.componentId }}
   template:
     metadata:
       labels:
-        app: ${{ parameters.componentId }}
-        team: ${{ parameters.owner }}
+        app: ${{ values.componentId }}
+        team: ${{ values.owner }}
     spec:
       containers:
       - name: app
-        image: ghcr.io/your-org/${{ parameters.componentId }}:latest
+        image: ghcr.io/your-org/${{ values.componentId }}:latest
         ports:
-        - containerPort: ${{ parameters.port }}
+        - containerPort: ${{ values.port }}
         env:
         - name: NAMESPACE
-          value: ${{ parameters.namespace }}
+          value: ${{ values.namespace }}
         resources:
           requests:
             memory: "128Mi"

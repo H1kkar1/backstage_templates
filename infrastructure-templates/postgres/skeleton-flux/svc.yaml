@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
+  name: ${{ values.componentId }}
+  namespace: ${{ values.namespace }}
   labels:
-    app: ${{ parameters.componentId }}
+    app: ${{ values.componentId }}
 spec:
   type: ClusterIP
   ports:
@@ -13,4 +13,4 @@ spec:
     protocol: TCP
     name: postgres
   selector:
-    app: ${{ parameters.componentId }}
+    app: ${{ values.componentId }}

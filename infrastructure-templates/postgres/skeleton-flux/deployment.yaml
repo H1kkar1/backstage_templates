@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
+  name: ${{ values.componentId }}
+  namespace: ${{ values.namespace }}
   labels:
-    app: ${{ parameters.componentId }}
+    app: ${{ values.componentId }}
     component: database
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ${{ parameters.componentId }}
+      app: ${{ values.componentId }}
   template:
     metadata:
       labels:
-        app: ${{ parameters.componentId }}
+        app: ${{ values.componentId }}
         component: database
     spec:
       containers:
       - name: postgres
-        image: postgres:${{ parameters.postgresVersion }}-alpine
+        image: postgres:${{ values.postgresVersion }}-alpine
         ports:
         - containerPort: 5432
           name: postgres
@@ -27,22 +27,22 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: ${{ parameters.componentId }}-secret
+              name: ${{ values.componentId }}-secret
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: ${{ parameters.componentId }}-secret
+              name: ${{ values.componentId }}-secret
               key: POSTGRES_PASSWORD
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
-              name: ${{ parameters.componentId }}-secret
+              name: ${{ values.componentId }}-secret
               key: POSTGRES_DB
         - name: PGDATA
           valueFrom:
             configMapKeyRef:
-              name: ${{ parameters.componentId }}-config
+              name: ${{ values.componentId }}-config
               key: PGDATA
         volumeMounts:
         - name: postgres-storage
@@ -52,16 +52,16 @@ spec:
             memory: "256Mi"
             cpu: "250m"
           limits:
-            memory: ${{ parameters.memoryLimit }}
-            cpu: ${{ parameters.cpuLimit }}
+            memory: ${{ values.memoryLimit }}
+            cpu: ${{ values.cpuLimit }}
         livenessProbe:
           exec:
             command:
             - pg_isready
             - -U
-            - ${{ parameters.databaseUser }}
+            - ${{ values.databaseUser }}
             - -d
-            - ${{ parameters.databaseName }}
+            - ${{ values.databaseName }}
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
@@ -69,12 +69,12 @@ spec:
             command:
             - pg_isready
             - -U
-            - ${{ parameters.databaseUser }}
+            - ${{ values.databaseUser }}
             - -d
-            - ${{ parameters.databaseName }}
+            - ${{ values.databaseName }}
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
-          claimName: ${{ parameters.componentId }}-pvc
+          claimName: ${{ values.componentId }}-pvc

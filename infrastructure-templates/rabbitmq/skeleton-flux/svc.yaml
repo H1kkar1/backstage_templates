@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
+  name: ${{ values.componentId }}
+  namespace: ${{ values.namespace }}
 spec:
   type: ClusterIP
   ports:
@@ -15,4 +15,4 @@ spec:
     protocol: TCP
     name: management
   selector:
-    app: ${{ parameters.componentId }}
+    app: ${{ values.componentId }}

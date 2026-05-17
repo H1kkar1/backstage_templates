@@ -1,35 +1,47 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
+  name: ${{ values.componentId }}
+  namespace: ${{ values.namespace }}
   labels:
-    app: ${{ parameters.componentId }}
-    backstage.io/name: ${{ parameters.componentId }}
+    app: ${{ values.componentId }}
+    backstage.io/name: ${{ values.componentId }}
 spec:
-  replicas: 1
+  replicas: ${{ values.replicaCount }}
   selector:
     matchLabels:
-      app: ${{ parameters.componentId }}
+      app: ${{ values.componentId }}
   template:
     metadata:
       labels:
-        app: ${{ parameters.componentId }}
+        app: ${{ values.componentId }}
     spec:
       containers:
       - name: app
-        image: ghcr.io/your-org/${{ parameters.componentId }}:latest
+        image: ${{ values.imageRegistry }}/${{ values.imageOrg }}/${{ values.componentId }}:latest
         ports:
-        - containerPort: ${{ parameters.port }}
+        - containerPort: ${{ values.port }}
         env:
         - name: NAMESPACE
-          value: ${{ parameters.namespace }}
+          value: ${{ values.namespace }}
         - name: SERVICE_NAME
-          value: ${{ parameters.componentId }}
+          value: ${{ values.componentId }}
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "100m"
+            memory: ${{ values.memoryRequest }}
+            cpu: ${{ values.cpuRequest }}
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: ${{ values.memoryLimit }}
+            cpu: ${{ values.cpuLimit }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: ${{ values.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: ${{ values.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 5

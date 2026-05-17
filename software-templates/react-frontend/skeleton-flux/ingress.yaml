@@ -1,28 +1,32 @@
-{% if parameters.exposeService %}
+{% if values.exposeService %}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ${{ parameters.componentId }}
-  namespace: ${{ parameters.namespace }}
+  name: ${{ values.componentId }}
+  namespace: ${{ values.namespace }}
   annotations:
-    kubernetes.io/ingress.class: nginx
+    kubernetes.io/ingress.class: ${{ values.ingressClass }}
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    {% if values.tlsEnabled %}
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    {% endif %}
 spec:
+  {% if values.tlsEnabled %}
+  tls:
+  - hosts:
+    - ${{ values.hostname }}
+    secretName: ${{ values.componentId }}-tls
+  {% endif %}
   rules:
-  - host: ${{ parameters.hostname }}
+  - host: ${{ values.hostname }}
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: ${{ parameters.componentId }}
+            name: ${{ values.componentId }}
             port:
               number: 80
-  tls:
-  - hosts:
-    - ${{ parameters.hostname }}
-    secretName: ${{ parameters.componentId }}-tls
 {% endif %}
