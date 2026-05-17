@@ -4,7 +4,6 @@ metadata:
   name: diploma-templates
 spec:
   targets:
-    - ./software-templates/default-system/template.yaml
     - ./software-templates/python-service/template.yaml
     - ./software-templates/react-frontend/template.yaml
     - ./infrastructure-templates/postgres/template.yaml

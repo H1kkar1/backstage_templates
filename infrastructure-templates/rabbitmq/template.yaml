@@ -18,6 +18,7 @@ spec:
           title: Service Name
           type: string
           default: "rabbitmq"
+          pattern: '^[a-z][a-z0-9-]*$'
         namespace:
           title: Namespace
           type: string
@@ -26,10 +27,21 @@ spec:
           title: RabbitMQ Version
           type: string
           default: "3.12-management-alpine"
+          description: "Версия RabbitMQ (например, 3.12-management-alpine, 3.13-management-alpine)"
         defaultUser:
           title: Default Username
           type: string
           default: "admin"
+        rabbitmqPassword:
+          title: RabbitMQ Password
+          type: string
+          default: "rabbitmq123"
+          ui:field: Secret
+        erlangCookie:
+          title: Erlang Cookie
+          type: string
+          default: "cookie123"
+          ui:field: Secret
         storageSize:
           title: Storage Size
           type: string
@@ -42,6 +54,14 @@ spec:
           title: CPU Limit
           type: string
           default: "500m"
+        memoryRequest:
+          title: Memory Request
+          type: string
+          default: "256Mi"
+        cpuRequest:
+          title: CPU Request
+          type: string
+          default: "200m"
         gitopsRepoUrl:
           title: GitOps Repository URL
           type: string
@@ -59,9 +79,13 @@ spec:
           namespace: ${{ parameters.namespace }}
           rabbitmqVersion: ${{ parameters.rabbitmqVersion }}
           defaultUser: ${{ parameters.defaultUser }}
+          rabbitmqPassword: ${{ parameters.rabbitmqPassword }}
+          erlangCookie: ${{ parameters.erlangCookie }}
           storageSize: ${{ parameters.storageSize }}
           memoryLimit: ${{ parameters.memoryLimit }}
           cpuLimit: ${{ parameters.cpuLimit }}
+          memoryRequest: ${{ parameters.memoryRequest }}
+          cpuRequest: ${{ parameters.cpuRequest }}
 
     - id: push-to-gitops
       name: Push to GitOps Repository
@@ -69,7 +93,13 @@ spec:
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
         title: "Add RabbitMQ ${{ parameters.componentId }}"
-        description: "This PR adds RabbitMQ message broker instance"
+        description: |
+          This PR adds RabbitMQ message broker instance
+          
+          - Version: ${{ parameters.rabbitmqVersion }}
+          - Storage: ${{ parameters.storageSize }}
+          - Memory Limit: ${{ parameters.memoryLimit }}
+          - CPU Limit: ${{ parameters.cpuLimit }}
         branchName: backstage/add-rabbitmq-${{ parameters.componentId }}
         sourcePath: ./generated
         targetPath: .

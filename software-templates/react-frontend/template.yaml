@@ -33,6 +33,37 @@ spec:
           title: Application Port
           type: number
           default: 80
+        replicaCount:
+          title: Number of Replicas
+          type: number
+          default: 2
+        memoryRequest:
+          title: Memory Request
+          type: string
+          default: "64Mi"
+        cpuRequest:
+          title: CPU Request
+          type: string
+          default: "50m"
+        memoryLimit:
+          title: Memory Limit
+          type: string
+          default: "256Mi"
+        cpuLimit:
+          title: CPU Limit
+          type: string
+          default: "200m"
+
+    - title: Container Registry Configuration
+      properties:
+        imageRegistry:
+          title: Container Registry
+          type: string
+          default: "ghcr.io"
+        imageOrg:
+          title: Registry Organization
+          type: string
+          default: "H1KKAR1"
 
     - title: Git Configuration
       properties:
@@ -54,6 +85,18 @@ spec:
         hostname:
           title: Domain Name
           type: string
+          ui:show:
+            condition: exposeService == true
+        ingressClass:
+          title: Ingress Class
+          type: string
+          default: "nginx"
+          ui:show:
+            condition: exposeService == true
+        tlsEnabled:
+          title: Enable TLS
+          type: boolean
+          default: true
           ui:show:
             condition: exposeService == true
 
@@ -92,6 +135,15 @@ spec:
           owner: ${{ parameters.owner }}
           exposeService: ${{ parameters.exposeService }}
           hostname: ${{ parameters.hostname }}
+          ingressClass: ${{ parameters.ingressClass }}
+          tlsEnabled: ${{ parameters.tlsEnabled }}
+          replicaCount: ${{ parameters.replicaCount }}
+          memoryRequest: ${{ parameters.memoryRequest }}
+          cpuRequest: ${{ parameters.cpuRequest }}
+          memoryLimit: ${{ parameters.memoryLimit }}
+          cpuLimit: ${{ parameters.cpuLimit }}
+          imageRegistry: ${{ parameters.imageRegistry }}
+          imageOrg: ${{ parameters.imageOrg }}
 
     - id: push-to-gitops
       name: Push to GitOps Repository
@@ -99,7 +151,13 @@ spec:
       input:
         repoUrl: ${{ parameters.gitopsRepoUrl }}
         title: "Add ${{ parameters.componentId }} frontend"
-        description: "This PR adds Kubernetes manifests for ${{ parameters.componentId }} frontend"
+        description: |
+          This PR adds Kubernetes manifests for ${{ parameters.componentId }} frontend
+          
+          - Port: ${{ parameters.port }}
+          - Replicas: ${{ parameters.replicaCount }}
+          - Memory Limit: ${{ parameters.memoryLimit }}
+          - CPU Limit: ${{ parameters.cpuLimit }}
         branchName: backstage/add-${{ parameters.componentId }}
         sourcePath: ./generated
         targetPath: .

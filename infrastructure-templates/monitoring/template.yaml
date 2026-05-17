@@ -26,10 +26,58 @@ spec:
           title: Grafana Admin Password
           type: string
           default: "admin"
+          ui:field: Secret
+        grafanaVersion:
+          title: Grafana Version
+          type: string
+          default: "latest"
+          description: "Версия Grafana (например, 10.4.0, latest)"
+        prometheusVersion:
+          title: Prometheus Version
+          type: string
+          default: "latest"
+          description: "Версия Prometheus (например, v2.52.0, latest)"
         storageSize:
           title: Prometheus Storage Size
           type: string
           default: "10Gi"
+        prometheusMemoryLimit:
+          title: Prometheus Memory Limit
+          type: string
+          default: "1Gi"
+        prometheusCpuLimit:
+          title: Prometheus CPU Limit
+          type: string
+          default: "500m"
+        prometheusMemoryRequest:
+          title: Prometheus Memory Request
+          type: string
+          default: "512Mi"
+        prometheusCpuRequest:
+          title: Prometheus CPU Request
+          type: string
+          default: "250m"
+        grafanaMemoryLimit:
+          title: Grafana Memory Limit
+          type: string
+          default: "512Mi"
+        grafanaCpuLimit:
+          title: Grafana CPU Limit
+          type: string
+          default: "200m"
+        grafanaMemoryRequest:
+          title: Grafana Memory Request
+          type: string
+          default: "256Mi"
+        grafanaCpuRequest:
+          title: Grafana CPU Request
+          type: string
+          default: "100m"
+        scrapeInterval:
+          title: Prometheus Scrape Interval
+          type: string
+          default: "15s"
+          description: "Интервал сбора метрик"
         gitopsRepoUrl:
           title: GitOps Repository URL
           type: string
@@ -46,7 +94,18 @@ spec:
           componentId: ${{ parameters.componentId }}
           namespace: ${{ parameters.namespace }}
           grafanaPassword: ${{ parameters.grafanaPassword }}
+          grafanaVersion: ${{ parameters.grafanaVersion }}
+          prometheusVersion: ${{ parameters.prometheusVersion }}
           storageSize: ${{ parameters.storageSize }}
+          prometheusMemoryLimit: ${{ parameters.prometheusMemoryLimit }}
+          prometheusCpuLimit: ${{ parameters.prometheusCpuLimit }}
+          prometheusMemoryRequest: ${{ parameters.prometheusMemoryRequest }}
+          prometheusCpuRequest: ${{ parameters.prometheusCpuRequest }}
+          grafanaMemoryLimit: ${{ parameters.grafanaMemoryLimit }}
+          grafanaCpuLimit: ${{ parameters.grafanaCpuLimit }}
+          grafanaMemoryRequest: ${{ parameters.grafanaMemoryRequest }}
+          grafanaCpuRequest: ${{ parameters.grafanaCpuRequest }}
+          scrapeInterval: ${{ parameters.scrapeInterval }}
 
     - id: push-to-gitops
       name: Push to GitOps Repository
