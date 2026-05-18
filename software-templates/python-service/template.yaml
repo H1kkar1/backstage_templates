@@ -1,4 +1,3 @@
-{% raw %}
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
@@ -119,4 +118,3 @@ spec:
         url: ${{ steps['create-code-repo'].output.remoteUrl }}
       - title: GitOps Manifests
         url: ${{ parameters.gitopsRepoUrl }}/tree/main/apps/${{ parameters.owner }}/${{ parameters.componentId }}
-{% endraw %}

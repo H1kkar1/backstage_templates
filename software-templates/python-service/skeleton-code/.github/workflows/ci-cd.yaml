@@ -1,3 +1,4 @@
+{% raw %}
 name: Python Service CI/CD
 
 on:
@@ -12,8 +13,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
-  actions: read
 
 env:
   REGISTRY: docker.io
@@ -22,7 +21,6 @@ env:
   GITOPS_REPO: ${{ secrets.GITOPS_REPO_URL }}
 
 jobs:
-  # JOB 1: Линтинг и тесты
   test:
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +35,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ 'requirements.txt' }}
       
       - name: Install dependencies
         run: |
@@ -58,7 +56,6 @@ jobs:
         with:
           file: ./coverage.xml
 
-  # JOB 2: Безопасность
   security:
     runs-on: ubuntu-latest
     steps:
@@ -74,7 +71,11 @@ jobs:
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
       
-      - name: Run Trivy in SARIF format (for artifact)
+      - name: Display Trivy results
+        run: cat trivy-results.txt
+        if: always()
+      
+      - name: Run Trivy in SARIF format
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
@@ -82,7 +83,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
       
-      - name: Upload Trivy results as artifact
+      - name: Upload Trivy results
         uses: actions/upload-artifact@v4
         with:
           name: trivy-scan-results
@@ -90,8 +91,6 @@ jobs:
             trivy-results.txt
             trivy-results.sarif
           retention-days: 30
-
-  # JOB 3: Сборка и пуш образа
 
   build-and-push:
     needs: [test, security]
@@ -109,33 +108,17 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix={{date 'YYYYMMDD'}}-{{sha}}
-            type=raw,value=latest
-            type=ref,event=branch
-      
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/test-python-service:latest
+            ${{ secrets.DOCKER_USERNAME }}/test-python-service:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Output image tag
-        id: image
-        run: |
-          echo "tag=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
-          echo "digest=${{ steps.meta.outputs.digest }}" >> $GITHUB_OUTPUT
-
-  # JOB 4: Обновление GitOps репозитория
   update-gitops:
     needs: build-and-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -157,7 +140,7 @@ jobs:
         run: |
           cd gitops
           SERVICE_NAME="${{ steps.service.outputs.name }}"
-          IMAGE_TAG="${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          IMAGE_TAG="${{ secrets.DOCKER_USERNAME }}/test-python-service:${{ github.sha }}"
           
           sed -i "s|image:.*|image: ${IMAGE_TAG}|" apps/${SERVICE_NAME}/deployment.yaml
           sed -i "/annotations:/a\    checksum/config: $(date +%s)" apps/${SERVICE_NAME}/deployment.yaml
@@ -170,7 +153,8 @@ jobs:
           git add apps/${{ steps.service.outputs.name }}/deployment.yaml
           git commit -m "Update ${{ steps.service.outputs.name }} to ${{ github.sha }}
           
-          Image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          Image: ${{ secrets.DOCKER_USERNAME }}/test-python-service:${{ github.sha }}
           Triggered by: ${{ github.actor }}
           Commit: ${{ github.sha }}"
           git push origin main
+{% endraw %}
